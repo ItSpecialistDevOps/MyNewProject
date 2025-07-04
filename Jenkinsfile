@@ -4,6 +4,7 @@ pipeline {
     environment {
         IMAGE_NAME = "hello-nginx-node"
         CONTAINER_NAME = "hello-nginx-container"
+        DOCKER_HUB_IMAGE = "devopsabhishekh/hello-nginx-node"
     }
 
     stages {
@@ -15,19 +16,25 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    sh "docker build -t $IMAGE_NAME ."
-                }
+                sh "docker build -t $IMAGE_NAME ."
             }
         }
 
         stage('Run Container') {
             steps {
-                script {
-                    // Stop any previous container with the same name
-                    sh "docker rm -f $CONTAINER_NAME || true"
-                    // Run the container
-                    sh "docker run -d -p 13001:80 -p 13002:443 --name $CONTAINER_NAME $IMAGE_NAME"
+                sh "docker rm -f $CONTAINER_NAME || true"
+                sh "docker run -d -p 13001:80 -p 13002:443 --name $CONTAINER_NAME $IMAGE_NAME"
+            }
+        }
+
+        stage('Tag & Push to Docker Hub') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh """
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                        docker tag $IMAGE_NAME $DOCKER_HUB_IMAGE
+                        docker push $DOCKER_HUB_IMAGE
+                    """
                 }
             }
         }
@@ -35,10 +42,10 @@ pipeline {
 
     post {
         success {
-            echo 'Build and deploy succeeded!'
+            echo '✅ Build, run, and push to Docker Hub succeeded!'
         }
         failure {
-            echo 'Build failed!'
+            echo '❌ Pipeline failed.'
         }
     }
 }
