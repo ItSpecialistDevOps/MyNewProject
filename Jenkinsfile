@@ -31,8 +31,14 @@ pipeline {
                             curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
                         fi
 
+                        echo "Installing wget..."
+                        apk add --no-cache wget
+
+                        echo "Downloading Trivy HTML template..."
                         mkdir -p /tmp/trivy-template
                         wget -O /tmp/trivy-template/html.tpl https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl
+
+                        echo "Running Trivy scan..."
                         trivy image --format template --template @/tmp/trivy-template/html.tpl -o trivy-report.html $IMAGE_NAME
                     '''
                 }
