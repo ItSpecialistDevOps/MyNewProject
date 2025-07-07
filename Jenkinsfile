@@ -22,6 +22,23 @@ pipeline {
             }
         }
 
+        stage('Scan Image with Trivy') {
+            steps {
+                script {
+                    // Optional: Install Trivy if not available
+                    sh '''
+                    if ! command -v trivy &> /dev/null; then
+                        echo "Installing Trivy..."
+                        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+                    fi
+                    '''
+
+                    // Run Trivy scan
+                    sh "trivy image --exit-code 0 --severity HIGH,CRITICAL $IMAGE_NAME"
+                }
+            }
+        }
+
         stage('Run Container') {
             steps {
                 sh "docker rm -f $CONTAINER_NAME || true"
@@ -44,7 +61,7 @@ pipeline {
 
     post {
         success {
-            echo '✅ Build, run, and push to Docker Hub succeeded!'
+            echo '✅ Build, scan, run, and push to Docker Hub succeeded!'
         }
         failure {
             echo '❌ Pipeline failed.'
