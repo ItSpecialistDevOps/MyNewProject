@@ -25,17 +25,23 @@ pipeline {
         stage('Scan Image with Trivy') {
             steps {
                 script {
-                    // Optional: Install Trivy if not available
                     sh '''
-                    if ! command -v trivy &> /dev/null; then
-                        echo "Installing Trivy..."
-                        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
-                    fi
-                    '''
+                        if ! command -v trivy &> /dev/null; then
+                            echo "Installing Trivy..."
+                            curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+                        fi
 
-                    // Run Trivy scan
-                    sh "trivy image --exit-code 0 --severity HIGH,CRITICAL $IMAGE_NAME"
+                        mkdir -p /tmp/trivy-template
+                        wget -O /tmp/trivy-template/html.tpl https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl
+                        trivy image --format template --template @/tmp/trivy-template/html.tpl -o trivy-report.html $IMAGE_NAME
+                    '''
                 }
+            }
+        }
+
+        stage('Archive Trivy Report') {
+            steps {
+                archiveArtifacts artifacts: 'trivy-report.html', fingerprint: true
             }
         }
 
