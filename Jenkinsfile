@@ -12,7 +12,6 @@ pipeline {
 
     tools {
         nodejs 'Node16'
-        sonarScanner 'SonarScanner'
     }
 
     stages {
