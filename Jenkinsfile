@@ -7,12 +7,22 @@ pipeline {
         DOCKER_HUB_IMAGE = "devopsabhishekh/hello-nginx-node"
         HOST_HTTP_PORT = "13011"
         HOST_HTTPS_PORT = "13012"
+        SONAR_PROJECT_KEY = "MyNewProject"
     }
 
     stages {
         stage('Clone Repository') {
             steps {
                 git branch: 'main', url: 'https://github.com/ItSpecialistDevOps/MyNewProject.git'
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('MySonarServer') {
+                    sh 'npm install'
+                    sh 'sonar-scanner -Dsonar.projectKey=$SONAR_PROJECT_KEY -Dsonar.sources=. -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_AUTH_TOKEN'
+                }
             }
         }
 
@@ -70,7 +80,7 @@ pipeline {
 
     post {
         success {
-            echo '✅ Build, scan, run, and push to Docker Hub succeeded!'
+            echo '✅ Build, scan, SonarQube, and push all succeeded!'
         }
         failure {
             echo '❌ Pipeline failed.'
