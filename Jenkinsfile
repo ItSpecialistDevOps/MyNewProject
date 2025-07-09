@@ -10,6 +10,11 @@ pipeline {
         SONAR_PROJECT_KEY = "MyNewProject"
     }
 
+    tools {
+        nodejs 'Node16'
+        sonarScanner 'SonarScanner'
+    }
+
     stages {
         stage('Clone Repository') {
             steps {
@@ -20,8 +25,14 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('MySonarServer') {
-                    sh 'npm install'
-                    sh 'sonar-scanner -Dsonar.projectKey=$SONAR_PROJECT_KEY -Dsonar.sources=. -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_AUTH_TOKEN'
+                    sh '''
+                        npm install
+                        sonar-scanner \
+                          -Dsonar.projectKey=$SONAR_PROJECT_KEY \
+                          -Dsonar.sources=. \
+                          -Dsonar.host.url=$SONAR_HOST_URL \
+                          -Dsonar.login=$SONAR_AUTH_TOKEN
+                    '''
                 }
             }
         }
@@ -80,7 +91,7 @@ pipeline {
 
     post {
         success {
-            echo '✅ Build, scan, SonarQube, and push all succeeded!'
+            echo '✅ All stages completed: SonarQube, Trivy, Docker build & push!'
         }
         failure {
             echo '❌ Pipeline failed.'
